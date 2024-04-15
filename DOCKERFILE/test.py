@@ -16,6 +16,9 @@
 import argparse
 import sys
 import time
+import tensorflow as tf
+import onnx
+from tf2onnx import convert
 
 import cv2
 from tflite_support.task import core
@@ -163,6 +166,23 @@ def main():
   run(args.model, int(args.maxResults),
       args.scoreThreshold, int(args.numThreads), bool(args.enableEdgeTPU),
       int(args.cameraId), args.frameWidth, args.frameHeight)
+
+# TensorFlow Lite 모델 로드
+interpreter = tf.lite.Interpreter(model_path="your_tflite_model.tflite")
+interpreter.allocate_tensors()
+
+# TensorFlow 그래프로 변환
+concrete_func = interpreter.get_concrete_function()
+tf.saved_model.save(concrete_func, "saved_model")
+
+# TensorFlow 모델 로드
+model = tf.saved_model.load("saved_model")
+
+# ONNX로 변환
+onnx_model = convert.from_saved_model("saved_model")
+
+# ONNX 모델 저장
+onnx.save(onnx_model, "converted_model.onnx")
 
 
 if __name__ == '__main__':
